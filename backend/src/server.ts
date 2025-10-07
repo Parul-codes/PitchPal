@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import profileRoutes from "./routes/profileRoutes";
 
 dotenv.config();
 
@@ -9,14 +10,17 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: "http://localhost:5173" }));
 app.use(express.json());
 
 // MongoDB Connection
-// mongoose
-//   .connect(process.env.MONGO_URI || "")
-//   .then(() => console.log("✅ MongoDB connected"))
-//   .catch((err) => console.log("❌ MongoDB connection failed:", err));
+mongoose
+  .connect(process.env.MONGO_URI || "")
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.log("❌ MongoDB connection failed:", err));
+
+// Routes
+app.use("/api/profiles", profileRoutes);
 
 // Basic route
 app.get("/", (req, res) => {
@@ -25,5 +29,5 @@ app.get("/", (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port https://localhost:${PORT}`);
+  console.log(`🚀 Server running on port http://localhost:${PORT}`);
 });

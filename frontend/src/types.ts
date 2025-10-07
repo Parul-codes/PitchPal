@@ -30,6 +30,7 @@ export interface FormSubmission {
   status: 'Submitted' | 'Pending Review' | 'Accepted' | 'Rejected';
 }
 
+// src/types.ts
 export interface UserProfile {
   name: string;
   email: string;
@@ -37,11 +38,11 @@ export interface UserProfile {
   tiktok?: string;
   followers: {
     instagram: number;
-    tiktok?: number;
+    tiktok: number;
   };
   niche: string;
-  location: string;
-  bio: string;
+  location?: string;
+  bio?: string;
   rates: {
     post: number;
     story: number;
