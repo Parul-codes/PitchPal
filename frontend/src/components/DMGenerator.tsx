@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Copy, Wand2, RefreshCw, Check } from 'lucide-react';
+import axios from "axios";
 
 interface DMGeneratorProps {
   userProfile: any;
@@ -11,121 +12,31 @@ const DMGenerator: React.FC<DMGeneratorProps> = ({ userProfile }) => {
   const [tone, setTone] = useState('professional');
   const [generatedDM, setGeneratedDM] = useState('');
   const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const generateDM = () => {
-    const templates = {
-      professional: [
-        `Hi ${brandName} team! 👋
+  // Call backend AI endpoint
+  const generateDM = async () => {
+    if (!brandName) return alert("Please enter a brand name");
 
-I'm ${userProfile?.name || '[Your Name]'}, a ${userProfile?.niche || 'lifestyle'} content creator with ${userProfile?.followers?.instagram || '10k'}+ engaged followers on Instagram.
+    try {
+      interface DMResponse {
+      dm: string;
+    }
 
-I absolutely love your ${productType || 'products'} and think they'd be perfect for my audience who are always looking for quality ${userProfile?.niche || 'lifestyle'} recommendations.
+      setLoading(true);
+      const res = await axios.post<DMResponse>("http://localhost:5000/api/dm/generate", {
+        brandName,
+        productType,
+        tone,
+      });
 
-I'd love to collaborate and create authentic content showcasing your ${productType || 'products'}. I can provide:
-• High-quality photos/videos
-• Detailed product reviews
-• Stories & posts with genuine feedback
-
-My media kit is available here: ${userProfile?.mediaKit || '[Media Kit Link]'}
-
-Looking forward to potentially working together!
-
-Best,
-${userProfile?.name || '[Your Name]'}
-${userProfile?.instagram ? `@${userProfile.instagram}` : '@yourusername'}`,
-
-        `Hello ${brandName}! ✨
-
-I'm ${userProfile?.name || '[Your Name]'}, a ${userProfile?.niche || 'lifestyle'} content creator from ${userProfile?.location || '[Location]'} with a highly engaged community of ${userProfile?.followers?.instagram || '10k'}+ followers.
-
-Your ${productType || 'products'} align perfectly with my content and my audience's interests. I'd love to create authentic, engaging content featuring your brand.
-
-What I can offer:
-📸 Professional product photography
-📱 Instagram posts, stories & reels
-💬 Genuine reviews and recommendations
-📊 Detailed analytics and insights
-
-I'm particularly interested in your ${productType || 'products'} as they fit perfectly with my recent content themes.
-
-Would you be open to discussing a collaboration?
-
-${userProfile?.name || '[Your Name]'}
-${userProfile?.instagram ? `@${userProfile.instagram}` : '@yourusername'}`
-      ],
-      friendly: [
-        `Hey ${brandName}! 💕
-
-I'm ${userProfile?.name || '[Your Name]'} and I'm obsessed with your ${productType || 'products'}! I've been following your brand for a while and just love everything you create.
-
-I'm a ${userProfile?.niche || 'lifestyle'} content creator with ${userProfile?.followers?.instagram || '10k'}+ followers who are always asking me for product recommendations. I think they would absolutely love your ${productType || 'products'}!
-
-I'd love to partner with you to create some fun, authentic content. I'm all about genuine reviews and creating content that actually helps people discover amazing products.
-
-Let me know if you'd be interested in collaborating! I'd be happy to send over my media kit and some examples of my work.
-
-Can't wait to hear from you! ✨
-
-${userProfile?.name || '[Your Name]'}
-${userProfile?.instagram ? `@${userProfile.instagram}` : '@yourusername'}`,
-
-        `Hi there ${brandName} team! 🌟
-
-I'm ${userProfile?.name || '[Your Name]'}, a passionate ${userProfile?.niche || 'lifestyle'} creator with an amazing community of ${userProfile?.followers?.instagram || '10k'}+ engaged followers.
-
-I've been using and loving your ${productType || 'products'} for a while now, and my followers are constantly asking about them! I think a collaboration would be perfect.
-
-Here's what I can bring to the table:
-✨ Authentic product reviews
-📷 Beautiful, on-brand photography  
-🎥 Engaging video content
-💪 A genuinely interested audience
-
-I'd love to chat about how we can work together to create content that showcases your amazing ${productType || 'products'}.
-
-Hope to hear from you soon!
-
-${userProfile?.name || '[Your Name]'}
-${userProfile?.instagram ? `@${userProfile.instagram}` : '@yourusername'}`
-      ],
-      casual: [
-        `Hey ${brandName}! 👋
-
-${userProfile?.name || '[Your Name]'} here! I'm a ${userProfile?.niche || 'lifestyle'} creator with ${userProfile?.followers?.instagram || '10k'}+ followers and I'm absolutely loving your ${productType || 'products'}.
-
-My audience is always asking for authentic product recommendations, and I think your ${productType || 'products'} would be perfect for them. 
-
-Would you be up for a collaboration? I create genuine, engaging content that converts - no boring sponsored posts here! 😄
-
-Let me know if you're interested and I can send over some examples of my work.
-
-${userProfile?.name || '[Your Name]'}
-${userProfile?.instagram ? `@${userProfile.instagram}` : '@yourusername'}`,
-
-        `What's up ${brandName}! 🔥
-
-I'm ${userProfile?.name || '[Your Name]'}, ${userProfile?.niche || 'lifestyle'} creator with ${userProfile?.followers?.instagram || '10k'}+ engaged followers who trust my recommendations.
-
-Your ${productType || 'products'} are exactly what my audience has been asking for! I'd love to create some killer content for you.
-
-Quick stats:
-• ${userProfile?.followers?.instagram || '10k'}+ Instagram followers
-• High engagement rates
-• Authentic content style
-• Based in ${userProfile?.location || '[Location]'}
-
-Interested in working together? Hit me back and let's make some magic happen! ✨
-
-${userProfile?.name || '[Your Name]'}
-${userProfile?.instagram ? `@${userProfile.instagram}` : '@yourusername'}`
-      ]
-    };
-
-    const selectedTone = tone as keyof typeof templates;
-    const templateOptions = templates[selectedTone] || templates.professional;
-    const randomTemplate = templateOptions[Math.floor(Math.random() * templateOptions.length)];
-    
-    setGeneratedDM(randomTemplate);
+      setGeneratedDM(res.data.dm || "No DM generated. Try again!");
+    } catch (err) {
+      console.error(err);
+      alert("Error generating DM");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const copyToClipboard = async () => {
@@ -144,15 +55,16 @@ ${userProfile?.instagram ? `@${userProfile.instagram}` : '@yourusername'}`
 
   return (
     <div className="p-6">
+      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Cold DM Generator</h1>
         <p className="text-gray-600">Generate personalized cold DMs for brand outreach</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* DM Config Panel */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">DM Configuration</h3>
-          
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Brand Name *</label>
@@ -199,15 +111,16 @@ ${userProfile?.instagram ? `@${userProfile.instagram}` : '@yourusername'}`
 
             <button
               onClick={generateDM}
-              disabled={!brandName}
+              disabled={!brandName || loading}
               className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Wand2 size={20} />
-              <span>Generate DM</span>
+              <span>{loading ? 'Generating...' : 'Generate DM'}</span>
             </button>
           </div>
         </div>
 
+        {/* Generated DM Panel */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Generated DM</h3>

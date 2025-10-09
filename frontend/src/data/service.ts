@@ -1,7 +1,6 @@
-// src/services/profileService.ts
-const API_URL = "http://localhost:5000/api/profiles"; // your backend URL
+const API_URL = "http://localhost:5000/api/profiles"; 
 
-export const getProfiles = async () => {
+export const UserProfile = async () => {
   const res = await fetch(API_URL);
   return res.json();
 };
@@ -14,3 +13,4 @@ export const createProfile = async (data: any) => {
   });
   return res.json();
 };
+

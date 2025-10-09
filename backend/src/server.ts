@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import profileRoutes from "./routes/profileRoutes";
+import dmRoutes from "./routes/dmRoutes";
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ mongoose
 
 // Routes
 app.use("/api/profiles", profileRoutes);
+app.use("/api/dm", dmRoutes);
 
 // Basic route
 app.get("/", (req, res) => {
