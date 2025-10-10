@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Navigation from './components/Navigation';
 import Dashboard from './components/Dashboard';
 import BrandResearch from './components/BrandResearch';

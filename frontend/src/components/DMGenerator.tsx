@@ -21,7 +21,7 @@ const DMGenerator: React.FC<DMGeneratorProps> = ({ userProfile }) => {
     try {
       interface DMResponse {
       dm: string;
-    }
+      }
 
       setLoading(true);
       const res = await axios.post<DMResponse>("http://localhost:5000/api/dm/generate", {

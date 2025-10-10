@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import profileRoutes from "./routes/profileRoutes";
 import dmRoutes from "./routes/dmRoutes";
+import brandRoutes from "./routes/brandRoutes";
+import outreachRoutes from './routes/outreachRoutes';
 
 dotenv.config();
 
@@ -23,6 +25,9 @@ mongoose
 // Routes
 app.use("/api/profiles", profileRoutes);
 app.use("/api/dm", dmRoutes);
+app.use("/api", brandRoutes);
+app.use('/api/outreach', outreachRoutes);
+
 
 // Basic route
 app.get("/", (req, res) => {

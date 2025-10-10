@@ -1,68 +1,60 @@
 import { User, Instagram, Camera, DollarSign, Save } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { UserProfile } from '../types';
 
-interface Followers {
-  instagram: number;
-  tiktok: number;
+interface ProfileProps {
+  profile: UserProfile | null;
+  setProfile: (profile: UserProfile) => void;
 }
 
-export interface UserProfile {
-  _id?: string;
-  name: string;
-  email: string;
-  instagram: string;
-  tiktok: string;
-  followers: Followers;
-  niche: string;
-  location: string;
-  bio: string;
-  rates: { post: number; story: number; reel: number };
-  mediaKit: string;
-}
-
-const Profile: React.FC = () => {
-  const [formData, setFormData] = useState<UserProfile>({
-    name: '',
-    email: '',
-    instagram: '',
-    tiktok: '',
-    followers: { instagram: 0, tiktok: 0 },
-    niche: '',
-    location: '',
-    bio: '',
-    rates: { post: 0, story: 0, reel: 0 },
-    mediaKit: '',
-  });
+const Profile: React.FC<ProfileProps> = ({ profile, setProfile }) => {
+  const [formData, setFormData] = useState<UserProfile>(
+    profile || {
+      name: '',
+      email: '',
+      instagram: '',
+      tiktok: '',
+      followers: { instagram: 0, tiktok: 0 },
+      niche: '',
+      location: '',
+      bio: '',
+      rates: { post: 0, story: 0, reel: 0 },
+      mediaKit: '',
+    }
+  );
 
   const [saved, setSaved] = useState(false);
 
-  // Fetch profile from backend on component mount
+  // Fetch profile from backend on mount
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const res = await axios.get<UserProfile[]>('http://localhost:5000/api/profiles/');
         if (res.data.length > 0) {
-          setFormData(res.data[0]); // Load first profile for now
+          setFormData(res.data[0]);
+          setProfile(res.data[0]);
         }
       } catch (err) {
         console.error('Error fetching profile:', err);
       }
     };
-    fetchProfile();
-  }, []);
+    if (!profile) fetchProfile();
+  }, [profile, setProfile]);
 
   const handleSave = async () => {
     try {
+      let res;
       if (formData._id) {
-        // If profile already exists, update it
-        const res = await axios.put<UserProfile>(`http://localhost:5000/api/profiles/${formData._id}`, formData);
-        setFormData(res.data);
+        res = await axios.put<UserProfile>(
+          `http://localhost:5000/api/profiles/${formData._id}`,
+          formData
+        );
       } else {
-        // If profile is new, create it
-        const res = await axios.post<UserProfile>('http://localhost:5000/api/profiles/', formData);
-        setFormData(res.data); // this includes the _id from DB
+        res = await axios.post<UserProfile>('http://localhost:5000/api/profiles/', formData);
       }
+      setFormData(res.data);
+      setProfile(res.data); // update parent state
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {

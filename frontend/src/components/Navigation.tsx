@@ -11,7 +11,7 @@ const Navigation: React.FC<NavigationProps> = ({ currentPage, setCurrentPage, fo
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'research', label: 'Brand Research', icon: Search },
-    { id: 'dm-generator', label: 'DM Generator', icon: MessageCircle },
+    { id: 'dm-generator', label: 'Pitch Generator', icon: MessageCircle },
     { id: 'tracker', label: 'Outreach Tracker', icon: BarChart3 },
     { id: 'profile', label: 'Profile', icon: User },
   ];

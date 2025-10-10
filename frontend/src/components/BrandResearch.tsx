@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Search, Filter, ExternalLink, Star, Plus } from 'lucide-react';
+import { Search, Filter, ExternalLink, Plus } from 'lucide-react';
 import { Brand } from '../types';
-import { getBrandsByNiche, searchBrands } from '../data/brandSuggestions';
+import axios from 'axios';
 
 interface BrandResearchProps {
   onAddBrand: (brand: Brand) => void;
@@ -16,31 +16,33 @@ const BrandResearch: React.FC<BrandResearchProps> = ({ onAddBrand }) => {
   const niches = ['beauty', 'fashion', 'fitness', 'lifestyle', 'tech'];
 
   const handleSearch = async () => {
+    if (!searchQuery && !selectedNiche) return;
     setIsLoading(true);
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      let results: Brand[] = [];
-      
-      if (searchQuery) {
-        results = searchBrands(searchQuery);
-      } else if (selectedNiche) {
-        results = getBrandsByNiche(selectedNiche);
-      } else {
-        results = [];
+
+    try {
+      interface brandResearch {
+        brands: Brand[];
       }
-      
-      setSuggestions(results);
+      const res = await axios.post<brandResearch>("http://localhost:5000/api/brand-research", {
+        query: searchQuery,
+        niche: selectedNiche,
+      });
+
+      const brands: Brand[] = Array.isArray(res.data) ? res.data : res.data.brands || [];
+
+      setSuggestions(brands);
+    } catch (error) {
+      console.error("Error fetching brands:", error);
+      setSuggestions([]);
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   const handleNicheSelect = (niche: string) => {
     setSelectedNiche(niche);
     setSearchQuery('');
-    
-    const results = getBrandsByNiche(niche);
-    setSuggestions(results);
+    handleSearch(); // fetch brands for this niche
   };
 
   return (
@@ -66,7 +68,7 @@ const BrandResearch: React.FC<BrandResearchProps> = ({ onAddBrand }) => {
               />
             </div>
           </div>
-          
+
           <div className="lg:w-48">
             <label className="block text-sm font-medium text-gray-700 mb-2">Niche</label>
             <select
@@ -82,7 +84,7 @@ const BrandResearch: React.FC<BrandResearchProps> = ({ onAddBrand }) => {
               ))}
             </select>
           </div>
-          
+
           <div className="lg:w-auto">
             <label className="block text-sm font-medium text-gray-700 mb-2">&nbsp;</label>
             <button
@@ -97,26 +99,24 @@ const BrandResearch: React.FC<BrandResearchProps> = ({ onAddBrand }) => {
         </div>
       </div>
 
-      {selectedNiche && (
-        <div className="mb-6">
-          <div className="flex flex-wrap gap-2">
-            {niches.map((niche) => (
-              <button
-                key={niche}
-                onClick={() => handleNicheSelect(niche)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all capitalize ${
-                  selectedNiche === niche
-                    ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {niche}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Niche buttons */}
+      <div className="mb-6 flex flex-wrap gap-2">
+        {niches.map((niche) => (
+          <button
+            key={niche}
+            onClick={() => handleNicheSelect(niche)}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all capitalize ${
+              selectedNiche === niche
+                ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            {niche}
+          </button>
+        ))}
+      </div>
 
+      {/* Suggestions */}
       {suggestions.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {suggestions.map((brand) => (
@@ -149,7 +149,7 @@ const BrandResearch: React.FC<BrandResearchProps> = ({ onAddBrand }) => {
                   )}
                 </div>
               </div>
-              
+
               {brand.suggestedProducts && (
                 <div>
                   <h4 className="text-sm font-medium text-gray-700 mb-2">Popular Products:</h4>

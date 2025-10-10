@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Plus, Calendar, Filter, Eye, Edit2, Trash2, CheckCircle, Clock, MessageSquare } from 'lucide-react';
 import { OutreachRecord } from '../types';
 
@@ -19,38 +20,59 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
     notes: ''
   });
 
-  const addRecord = () => {
-    if (!newRecord.brandName) return;
+  const API_URL = 'http://localhost:5000/api/outreach';
 
-    const record: OutreachRecord = {
-      id: Date.now().toString(),
-      brandName: newRecord.brandName!,
-      platform: newRecord.platform as any || 'Instagram',
-      status: newRecord.status as any || 'Sent',
-      dmSentDate: newRecord.dmSentDate!,
-      notes: newRecord.notes,
-      responseReceived: false
+  // Fetch all records from backend
+  useEffect(() => {
+    const fetchRecords = async () => {
+      try {
+        const res = await axios.get<OutreachRecord[]>(API_URL);
+        setOutreach(res.data);
+      } catch (err) {
+        console.error('Error fetching outreach records:', err);
+      }
     };
+    fetchRecords();
+  }, []);
 
-    setOutreach([...outreach, record]);
-    setNewRecord({
-      brandName: '',
-      platform: 'Instagram',
-      status: 'Sent',
-      dmSentDate: new Date().toISOString().split('T')[0],
-      notes: ''
-    });
-    setShowAddForm(false);
+  // Add new record (POST)
+  const addRecord = async () => {
+    if (!newRecord.brandName) return;
+    try {
+      const res = await axios.post<OutreachRecord>(API_URL, newRecord);
+      setOutreach([...outreach, res.data]);
+      setNewRecord({
+        brandName: '',
+        platform: 'Instagram',
+        status: 'Sent',
+        dmSentDate: new Date().toISOString().split('T')[0],
+        notes: ''
+      });
+      setShowAddForm(false);
+    } catch (err) {
+      console.error('Error adding record:', err);
+    }
   };
 
-  const updateRecord = (id: string, updates: Partial<OutreachRecord>) => {
-    setOutreach(outreach.map(record => 
-      record.id === id ? { ...record, ...updates } : record
-    ));
+  // Update record (PUT)
+  const updateRecord = async (id: string, updates: Partial<OutreachRecord>) => {
+    try {
+      const res = await axios.put<OutreachRecord>(`${API_URL}/${id}`, updates);
+      setOutreach(outreach.map(r => r.id === id ? res.data : r));
+      setEditingRecord(null);
+    } catch (err) {
+      console.error('Error updating record:', err);
+    }
   };
 
-  const deleteRecord = (id: string) => {
-    setOutreach(outreach.filter(record => record.id !== id));
+  // Delete record (DELETE)
+  const deleteRecord = async (id: string) => {
+    try {
+      await axios.delete(`${API_URL}/${id}`);
+      setOutreach(outreach.filter(r => r.id !== id));
+    } catch (err) {
+      console.error('Error deleting record:', err);
+    }
   };
 
   const filteredOutreach = filterStatus 
@@ -84,12 +106,12 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
 
   return (
     <div className="p-6">
+      {/* Header */}
       <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Outreach Tracker</h1>
           <p className="text-gray-600">Monitor your brand outreach progress and responses</p>
         </div>
-        
         <button
           onClick={() => setShowAddForm(true)}
           className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 transition-all"
@@ -116,7 +138,6 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
             <option value="Rejected">Rejected</option>
             <option value="Following Up">Following Up</option>
           </select>
-          
           {filterStatus && (
             <span className="text-sm text-gray-600">
               Showing {filteredOutreach.length} of {outreach.length} records
@@ -129,14 +150,13 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
       {showAddForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New Outreach</h3>
-            
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{editingRecord ? 'Edit Outreach' : 'Add New Outreach'}</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Brand Name *</label>
                 <input
                   type="text"
-                  value={newRecord.brandName || ''}
+                  value={newRecord.brandName || editingRecord?.brandName || ''}
                   onChange={(e) => setNewRecord({...newRecord, brandName: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
@@ -146,7 +166,7 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Platform</label>
                   <select
-                    value={newRecord.platform || 'Instagram'}
+                    value={newRecord.platform || editingRecord?.platform || 'Instagram'}
                     onChange={(e) => setNewRecord({...newRecord, platform: e.target.value as any})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   >
@@ -160,7 +180,7 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                   <select
-                    value={newRecord.status || 'Sent'}
+                    value={newRecord.status || editingRecord?.status || 'Sent'}
                     onChange={(e) => setNewRecord({...newRecord, status: e.target.value as any})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   >
@@ -178,7 +198,7 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
                 <label className="block text-sm font-medium text-gray-700 mb-2">DM Sent Date</label>
                 <input
                   type="date"
-                  value={newRecord.dmSentDate || ''}
+                  value={newRecord.dmSentDate || editingRecord?.dmSentDate?.split('T')[0] || ''}
                   onChange={(e) => setNewRecord({...newRecord, dmSentDate: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
@@ -187,7 +207,7 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
                 <textarea
-                  value={newRecord.notes || ''}
+                  value={newRecord.notes || editingRecord?.notes || ''}
                   onChange={(e) => setNewRecord({...newRecord, notes: e.target.value})}
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -197,13 +217,13 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
 
             <div className="flex space-x-3 mt-6">
               <button
-                onClick={addRecord}
+                onClick={() => editingRecord ? updateRecord(editingRecord.id, newRecord) : addRecord()}
                 className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 transition-all"
               >
-                Add Outreach
+                {editingRecord ? 'Update Outreach' : 'Add Outreach'}
               </button>
               <button
-                onClick={() => setShowAddForm(false)}
+                onClick={() => { setShowAddForm(false); setEditingRecord(null); }}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Cancel
@@ -241,7 +261,6 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
                       </span>
                     </div>
                   </div>
-                  
                   <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-2">
                     <span>📱 {record.platform}</span>
                     <span>📅 Sent: {new Date(record.dmSentDate).toLocaleDateString()}</span>
@@ -249,15 +268,13 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
                       <span>💬 Replied: {new Date(record.responseDate).toLocaleDateString()}</span>
                     )}
                   </div>
-                  
                   {record.notes && (
                     <p className="text-sm text-gray-600 mt-2">{record.notes}</p>
                   )}
                 </div>
-
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => setEditingRecord(record)}
+                    onClick={() => { setEditingRecord(record); setShowAddForm(true); }}
                     className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                     title="Edit"
                   >
