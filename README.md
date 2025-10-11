@@ -1,4 +1,4 @@
-PitchPal 🚀
+# PitchPal 🚀
 
 PitchPal is a modern web application built with the MERN stack (MongoDB, Express, React, Node.js) and TypeScript. It allows users (UGC creators) to generate pitches using AI, save data and research brands in different niche.
 
