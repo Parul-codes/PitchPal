@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
-import { Copy, Wand2, RefreshCw, Check } from 'lucide-react';
+import React, { useState } from "react";
+import { Copy, Wand2, RefreshCw, Check } from "lucide-react";
 import axios from "axios";
+import { UserProfile } from "../types";
 
 interface DMGeneratorProps {
-  userProfile: any;
+  userProfile: UserProfile | null;
+  onDMGenerated?: (brandName: string) => void; // ✅ make sure this prop exists
 }
 
-const DMGenerator: React.FC<DMGeneratorProps> = ({ userProfile }) => {
-  const [brandName, setBrandName] = useState('');
-  const [productType, setProductType] = useState('');
-  const [tone, setTone] = useState('professional');
-  const [generatedDM, setGeneratedDM] = useState('');
+const DMGenerator: React.FC<DMGeneratorProps> = ({ userProfile, onDMGenerated }) => {
+  const [brandName, setBrandName] = useState("");
+  const [productType, setProductType] = useState("");
+  const [tone, setTone] = useState("professional");
+  const [generatedDM, setGeneratedDM] = useState("");
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -19,18 +21,20 @@ const DMGenerator: React.FC<DMGeneratorProps> = ({ userProfile }) => {
     if (!brandName) return alert("Please enter a brand name");
 
     try {
-      interface DMResponse {
-      dm: string;
-      }
-
       setLoading(true);
-      const res = await axios.post<DMResponse>("http://localhost:5000/api/dm/generate", {
+      const res = await axios.post<{ dm: string }>("http://localhost:5000/api/dm/generate", {
         brandName,
         productType,
         tone,
       });
 
-      setGeneratedDM(res.data.dm || "No DM generated. Try again!");
+      const dmText = res.data.dm || "No DM generated. Try again!";
+      setGeneratedDM(dmText);
+
+      // ✅ Trigger callback to update recent activity
+      if (onDMGenerated) {
+        onDMGenerated(brandName);
+      }
     } catch (err) {
       console.error(err);
       alert("Error generating DM");
@@ -48,9 +52,9 @@ const DMGenerator: React.FC<DMGeneratorProps> = ({ userProfile }) => {
   };
 
   const tones = [
-    { value: 'professional', label: 'Professional', description: 'Formal and business-like' },
-    { value: 'friendly', label: 'Friendly', description: 'Warm and approachable' },
-    { value: 'casual', label: 'Casual', description: 'Relaxed and conversational' }
+    { value: "professional", label: "Professional", description: "Formal and business-like" },
+    { value: "friendly", label: "Friendly", description: "Warm and approachable" },
+    { value: "casual", label: "Casual", description: "Relaxed and conversational" },
   ];
 
   return (
@@ -115,7 +119,7 @@ const DMGenerator: React.FC<DMGeneratorProps> = ({ userProfile }) => {
               className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Wand2 size={20} />
-              <span>{loading ? 'Generating...' : 'Generate DM'}</span>
+              <span>{loading ? "Generating..." : "Generate DM"}</span>
             </button>
           </div>
         </div>
@@ -139,7 +143,7 @@ const DMGenerator: React.FC<DMGeneratorProps> = ({ userProfile }) => {
                     className="flex items-center space-x-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
                   >
                     {copied ? <Check size={16} /> : <Copy size={16} />}
-                    <span className="text-sm">{copied ? 'Copied!' : 'Copy'}</span>
+                    <span className="text-sm">{copied ? "Copied!" : "Copy"}</span>
                   </button>
                 </>
               )}
@@ -157,7 +161,9 @@ const DMGenerator: React.FC<DMGeneratorProps> = ({ userProfile }) => {
               <div className="text-center text-gray-500">
                 <Wand2 size={48} className="mx-auto mb-4 opacity-50" />
                 <p className="text-lg font-medium mb-2">Ready to generate your DM!</p>
-                <p className="text-sm">Fill in the brand details and click generate to create a personalized cold DM.</p>
+                <p className="text-sm">
+                  Fill in the brand details and click generate to create a personalized cold DM.
+                </p>
               </div>
             </div>
           )}
@@ -169,7 +175,8 @@ const DMGenerator: React.FC<DMGeneratorProps> = ({ userProfile }) => {
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
             <p className="text-orange-800 text-sm">
-              <strong>Tip:</strong> Complete your profile to generate more personalized DMs with your details automatically included.
+              <strong>Tip:</strong> Complete your profile to generate more personalized DMs with your
+              details automatically included.
             </p>
           </div>
         </div>

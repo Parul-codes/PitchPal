@@ -6,6 +6,8 @@ import profileRoutes from "./routes/profileRoutes";
 import dmRoutes from "./routes/dmRoutes";
 import brandRoutes from "./routes/brandRoutes";
 import outreachRoutes from './routes/outreachRoutes';
+import dashboardRoutes from "./routes/dashboardRoutes";
+import authRoutes from "./routes/auth";
 
 dotenv.config();
 
@@ -23,10 +25,13 @@ mongoose
   .catch((err) => console.log("❌ MongoDB connection failed:", err));
 
 // Routes
-app.use("/api/profiles", profileRoutes);
+app.use("/api/profile", profileRoutes);
 app.use("/api/dm", dmRoutes);
 app.use("/api", brandRoutes);
 app.use('/api/outreach', outreachRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/auth", authRoutes);
+
 
 
 // Basic route

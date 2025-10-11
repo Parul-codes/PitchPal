@@ -2,6 +2,7 @@ import { User, Instagram, Camera, DollarSign, Save } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { UserProfile } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 interface ProfileProps {
   profile: UserProfile | null;
@@ -9,69 +10,103 @@ interface ProfileProps {
 }
 
 const Profile: React.FC<ProfileProps> = ({ profile, setProfile }) => {
-  const [formData, setFormData] = useState<UserProfile>(
-    profile || {
-      name: '',
-      email: '',
-      instagram: '',
-      tiktok: '',
-      followers: { instagram: 0, tiktok: 0 },
-      niche: '',
-      location: '',
-      bio: '',
-      rates: { post: 0, story: 0, reel: 0 },
-      mediaKit: '',
-    }
-  );
+  const { token } = useAuth();
 
+  const [formData, setFormData] = useState<UserProfile>({
+    name: '',
+    email: '',
+    instagram: '',
+    tiktok: '',
+    followers: { instagram: 0, tiktok: 0 },
+    niche: '',
+    location: '',
+    bio: '',
+    rates: { post: 0, story: 0, reel: 0 },
+    mediaKit: '',
+    ...profile, // preloaded if available
+  });
+
+  const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
 
-  // Fetch profile from backend on mount
+  // Fetch profile from backend
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!token) return;
+
       try {
-        const res = await axios.get<UserProfile[]>('http://localhost:5000/api/profiles/');
-        if (res.data.length > 0) {
-          setFormData(res.data[0]);
-          setProfile(res.data[0]);
+        const res = await axios.get<UserProfile[]>(
+          'http://localhost:5000/api/profile/',
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        console.log("Profile fetched:", res.data);
+
+        if (res.data && res.data.length > 0) {
+          const profileFromBackend = res.data[0];
+          // Ensure nested objects exist
+          const safeProfile: UserProfile = {
+            ...profileFromBackend,
+            rates: profileFromBackend.rates || { post: 0, story: 0, reel: 0 },
+            followers: profileFromBackend.followers || { instagram: 0, tiktok: 0 },
+          };
+          setFormData(safeProfile);
+          setProfile(safeProfile);
         }
-      } catch (err) {
-        console.error('Error fetching profile:', err);
+      } catch (err: any) {
+        console.error('Error fetching profile:', err.response?.data || err.message);
+      } finally {
+        setLoading(false);
       }
     };
-    if (!profile) fetchProfile();
-  }, [profile, setProfile]);
 
+    fetchProfile();
+  }, [token, setProfile]);
+
+  // Handle save (create or update)
   const handleSave = async () => {
+    if (!token) {
+      alert('You must be logged in to save your profile.');
+      return;
+    }
+
     try {
-      let res;
-      if (formData._id) {
-        res = await axios.put<UserProfile>(
-          `http://localhost:5000/api/profiles/${formData._id}`,
-          formData
-        );
-      } else {
-        res = await axios.post<UserProfile>('http://localhost:5000/api/profiles/', formData);
-      }
-      setFormData(res.data);
-      setProfile(res.data); // update parent state
+      const payload = { ...formData };
+      const res = await axios.post<UserProfile>(
+        'http://localhost:5000/api/profile/',
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Ensure nested objects exist after saving
+      const safeProfile: UserProfile = {
+        ...res.data,
+        rates: res.data.rates || { post: 0, story: 0, reel: 0 },
+        followers: res.data.followers || { instagram: 0, tiktok: 0 },
+      };
+
+      setFormData(safeProfile);
+      setProfile(safeProfile);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch (err) {
-      console.error('Error saving profile:', err);
+    } catch (err: any) {
+      console.error('Error saving profile:', err.response?.data || err.message);
+      alert('Failed to save profile. Please try again.');
     }
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  // Handle input changes
+  const handleInputChange = (field: keyof UserProfile, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleNestedChange = (parent: string, field: string, value: any) => {
+  const handleNestedChange = (parent: 'rates' | 'followers', field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
-      [parent]: { ...(prev as any)[parent], [field]: value },
+      [parent]: { ...(prev[parent] || {}), [field]: value },
     }));
   };
+
+  if (loading) return <p>Loading profile...</p>;
 
   return (
     <div className="p-6">
@@ -178,7 +213,7 @@ const Profile: React.FC<ProfileProps> = ({ profile, setProfile }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Instagram Followers</label>
                 <input
                   type="number"
-                  value={formData.followers.instagram}
+                  value={formData.followers?.instagram || 0}
                   onChange={(e) => handleNestedChange('followers', 'instagram', parseInt(e.target.value) || 0)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
@@ -201,7 +236,7 @@ const Profile: React.FC<ProfileProps> = ({ profile, setProfile }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">TikTok Followers</label>
                 <input
                   type="number"
-                  value={formData.followers.tiktok || 0}
+                  value={formData.followers?.tiktok || 0}
                   onChange={(e) => handleNestedChange('followers', 'tiktok', parseInt(e.target.value) || 0)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
@@ -221,7 +256,7 @@ const Profile: React.FC<ProfileProps> = ({ profile, setProfile }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Instagram Post</label>
                 <input
                   type="number"
-                  value={formData.rates.post}
+                  value={formData.rates?.post || 0}
                   onChange={(e) => handleNestedChange('rates', 'post', parseInt(e.target.value) || 0)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
@@ -231,7 +266,7 @@ const Profile: React.FC<ProfileProps> = ({ profile, setProfile }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Instagram Story</label>
                 <input
                   type="number"
-                  value={formData.rates.story}
+                  value={formData.rates?.story || 0}
                   onChange={(e) => handleNestedChange('rates', 'story', parseInt(e.target.value) || 0)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
@@ -241,7 +276,7 @@ const Profile: React.FC<ProfileProps> = ({ profile, setProfile }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Instagram Reel</label>
                 <input
                   type="number"
-                  value={formData.rates.reel}
+                  value={formData.rates?.reel || 0}
                   onChange={(e) => handleNestedChange('rates', 'reel', parseInt(e.target.value) || 0)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
@@ -289,11 +324,11 @@ const Profile: React.FC<ProfileProps> = ({ profile, setProfile }) => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Followers:</span>
-                <span className="font-medium">{formData.followers.instagram?.toLocaleString() || 0}</span>
+                <span className="font-medium">{formData.followers?.instagram?.toLocaleString() || 0}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Post Rate:</span>
-                <span className="font-medium">${formData.rates.post || 0}</span>
+                <span className="font-medium">${formData.rates?.post || 0}</span>
               </div>
             </div>
           </div>

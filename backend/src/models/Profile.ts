@@ -1,31 +1,48 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-interface IProfile extends Document {
+export interface IProfile extends Document {
+  user: mongoose.Types.ObjectId;
   name: string;
-  niche: string;
+  email: string;
   bio: string;
-  location?: string;
-  mediaKit?: string;
+  instagram?: string;
+  tiktok?: string;
   followers: {
     instagram: number;
     tiktok: number;
   };
-  instagram?: string; 
-  tiktok?: string;
+  niche?: string;
+  location?: string;
+  rates: {
+    post: number;
+    story: number;
+    reel: number;
+  };
+  mediaKit?: string;
 }
 
-const ProfileSchema: Schema = new Schema({
-  name: { type: String, required: true },
-  niche: { type: String, required: true },
-  bio: { type: String },
-  location: { type: String },
-  mediaKit: { type: String },
-  followers: {
-    instagram: { type: Number, default: 0 },
-    tiktok: { type: Number, default: 0 },
+const profileSchema = new Schema<IProfile>(
+  {
+    user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    name: { type: String, required: true },
+    email: { type: String, required: true },
+    bio: { type: String },
+    instagram: { type: String },
+    tiktok: { type: String },
+    followers: {
+      instagram: { type: Number, default: 0 },
+      tiktok: { type: Number, default: 0 },
+    },
+    niche: { type: String },
+    location: { type: String },
+    rates: {
+      post: { type: Number, default: 0 },
+      story: { type: Number, default: 0 },
+      reel: { type: Number, default: 0 },
+    },
+    mediaKit: { type: String },
   },
-  instagram: { type: String }, 
-  tiktok: { type: String },
-});
+  { timestamps: true }
+);
 
-export default mongoose.model<IProfile>("Profile", ProfileSchema);
+export default mongoose.model<IProfile>("Profile", profileSchema);
