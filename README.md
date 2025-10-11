@@ -60,7 +60,3 @@ Deployment
 Backend: Deployed on Render
 
 Frontend: Deployed on Vercel
-
-Push to branch (git push origin feature-name)
-
-Create a Pull Request
