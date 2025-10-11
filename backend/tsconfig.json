@@ -1,14 +1,12 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "CommonJS",
-    "rootDir": "./src",          // all backend TS files should be under src
+    "target": "ES6",
+    "module": "commonjs",
     "outDir": "./dist",
-    "strict": true,
+    "rootDir": "./",
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true
+    "strict": true
   },
-  "include": ["src/**/*.ts"],   // only include backend TS files
-  "exclude": ["node_modules", "../frontend"]  // exclude frontend folder
+  "include": ["*.ts", "**/*.ts"],
+  "exclude": ["node_modules"]
 }
