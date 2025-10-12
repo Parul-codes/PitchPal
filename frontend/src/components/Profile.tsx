@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { UserProfile } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../api/base';
 
 interface ProfileProps {
   profile: UserProfile | null;
@@ -36,7 +37,7 @@ const Profile: React.FC<ProfileProps> = ({ profile, setProfile }) => {
 
       try {
         const res = await axios.get<UserProfile[]>(
-          'http://localhost:5000/api/profile/',
+          `${API_URL}/api/profile/`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         console.log("Profile fetched:", res.data);
@@ -72,7 +73,7 @@ const Profile: React.FC<ProfileProps> = ({ profile, setProfile }) => {
     try {
       const payload = { ...formData };
       const res = await axios.post<UserProfile>(
-        'http://localhost:5000/api/profile/',
+        `${API_URL}/api/profile/`,
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );

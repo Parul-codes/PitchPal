@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, Filter, ExternalLink, Plus } from 'lucide-react';
 import { Brand } from '../types';
 import axios from 'axios';
+import {API_URL} from '../api/base'
 
 interface BrandResearchProps {
   onAddBrand: (brand: Brand) => void;
@@ -23,7 +24,7 @@ const BrandResearch: React.FC<BrandResearchProps> = ({ onAddBrand }) => {
       interface brandResearch {
         brands: Brand[];
       }
-      const res = await axios.post<brandResearch>("http://localhost:5000/api/brand-research", {
+      const res = await axios.post<brandResearch>(`${API_URL}/api/brand-research`, {
         query: searchQuery,
         niche: selectedNiche,
       });

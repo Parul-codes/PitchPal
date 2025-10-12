@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Copy, Wand2, RefreshCw, Check } from "lucide-react";
 import axios from "axios";
 import { UserProfile } from "../types";
+import { API_URL } from "../api/base";
 
 interface DMGeneratorProps {
   userProfile: UserProfile | null;
@@ -22,7 +23,7 @@ const DMGenerator: React.FC<DMGeneratorProps> = ({ userProfile, onDMGenerated })
 
     try {
       setLoading(true);
-      const res = await axios.post<{ dm: string }>("http://localhost:5000/api/dm/generate", {
+      const res = await axios.post<{ dm: string }>(`${API_URL}/api/dm/generate`, {
         brandName,
         productType,
         tone,

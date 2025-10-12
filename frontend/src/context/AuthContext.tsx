@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import axios from "axios";
+import { API_URL } from "../api/base";
 
 interface User {
   id: string;
@@ -25,7 +26,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [token, setToken] = useState<string | null>(() => localStorage.getItem("token"));
 
   const login = async (email: string, password: string) => {
-    const res = await axios.post("http://localhost:5000/api/auth/login", { email, password });
+    const res = await axios.post(`${API_URL}/api/auth/login`, { email, password });
     const data = res.data as { token: string; user: User };
     setUser(data.user);
     setToken(data.token);
@@ -34,7 +35,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signup = async (name: string, email: string, password: string) => {
-    const res = await axios.post("http://localhost:5000/api/auth/signup", { name, email, password });
+    const res = await axios.post(`${API_URL}/api/auth/signup`, { name, email, password });
     const data = res.data as { token: string; user: User };
     setUser(data.user);
     setToken(data.token);

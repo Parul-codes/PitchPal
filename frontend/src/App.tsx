@@ -20,6 +20,7 @@ import {
 } from "./types";
 import { useAuth } from "./context/AuthContext";
 import Auth from "./components/Auth";
+import { API_URL } from "./api/base";
 
 
 
@@ -66,7 +67,7 @@ function App() {
         setError(null);
 
         const res = await axios.get<DashboardStats>(
-          "http://localhost:5000/api/dashboard"
+          `${API_URL}/api/dashboard`
         );
 
         if (res.data) {
