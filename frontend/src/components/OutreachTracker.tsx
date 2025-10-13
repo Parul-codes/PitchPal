@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Plus, Calendar, Filter, Eye, Edit2, Trash2, CheckCircle, Clock, MessageSquare } from 'lucide-react';
 import { OutreachRecord } from '../types';
+import { useAuth } from '../context/AuthContext';
 import {API_URL } from '../api/base';
 
 interface OutreachTrackerProps {
@@ -10,6 +11,8 @@ interface OutreachTrackerProps {
 }
 
 const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach }) => {
+  const { token } = useAuth();
+
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingRecord, setEditingRecord] = useState<OutreachRecord | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('');
@@ -27,7 +30,11 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
   useEffect(() => {
     const fetchRecords = async () => {
       try {
-        const res = await axios.get<OutreachRecord[]>(API_url);
+        const res = await axios.get<OutreachRecord[]>(API_url , {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
+        });
         setOutreach(res.data);
       } catch (err) {
         console.error('Error fetching outreach records:', err);
@@ -40,7 +47,11 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
   const addRecord = async () => {
     if (!newRecord.brandName) return;
     try {
-      const res = await axios.post<OutreachRecord>(API_url, newRecord);
+      const res = await axios.post<OutreachRecord>(API_url, newRecord, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      });
       setOutreach([...outreach, res.data]);
       setNewRecord({
         brandName: '',
@@ -58,7 +69,11 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
   // Update record (PUT)
   const updateRecord = async (id: string, updates: Partial<OutreachRecord>) => {
     try {
-      const res = await axios.put<OutreachRecord>(`${API_url}/${id}`, updates);
+      const res = await axios.put<OutreachRecord>(`${API_url}/${id}`, updates, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      });
       setOutreach(outreach.map(r => r.id === id ? res.data : r));
       setEditingRecord(null);
     } catch (err) {
@@ -69,7 +84,11 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
   // Delete record (DELETE)
   const deleteRecord = async (id: string) => {
     try {
-      await axios.delete(`${API_url}/${id}`);
+      await axios.delete(`${API_url}/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      });
       setOutreach(outreach.filter(r => r.id !== id));
     } catch (err) {
       console.error('Error deleting record:', err);

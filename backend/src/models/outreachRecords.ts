@@ -1,6 +1,7 @@
 import { Schema, model, Document } from 'mongoose';
 
 export interface IOutreachRecord extends Document {
+  userId: string;
   brandName: string;
   platform: 'Instagram' | 'TikTok' | 'Email' | 'Other';
   status: 'Sent' | 'Delivered' | 'Read' | 'Replied' | 'Rejected' | 'Following Up';
@@ -11,6 +12,7 @@ export interface IOutreachRecord extends Document {
 }
 
 const OutreachRecordSchema = new Schema<IOutreachRecord>({
+  userId: { type: String, required: true },
   brandName: { type: String, required: true },
   platform: { type: String, default: 'Instagram' },
   status: { type: String, default: 'Sent' },
