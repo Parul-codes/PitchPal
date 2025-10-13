@@ -9,6 +9,7 @@ export interface Brand {
 
 export interface OutreachRecord {
   id: string;
+  _id?: string; 
   brandName: string;
   brandId?: string;
   dmSentDate: string;

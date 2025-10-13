@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Plus, Calendar, Filter, Eye, Edit2, Trash2, CheckCircle, Clock, MessageSquare, AlertTriangle } from 'lucide-react';
+import { Plus, Calendar, Filter, Eye, Edit2, Trash2, CheckCircle, Clock, MessageSquare } from 'lucide-react';
 import { OutreachRecord } from '../types';
 import { useAuth } from '../context/AuthContext';
-import { API_URL } from '../api/base';
+import {API_URL } from '../api/base';
 
 interface OutreachTrackerProps {
   outreach: OutreachRecord[];
@@ -24,19 +24,16 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
     notes: ''
   });
 
-  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string | null; brandName?: string }>({
-    open: false,
-    id: null
-  });
-
   const API_url = `${API_URL}/api/outreach`;
 
-  // Fetch records
+  // Fetch all records from backend
   useEffect(() => {
     const fetchRecords = async () => {
       try {
-        const res = await axios.get<OutreachRecord[]>(API_url, {
-          headers: { Authorization: `Bearer ${token}` },
+        const res = await axios.get<OutreachRecord[]>(API_url , {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
         });
         setOutreach(res.data);
       } catch (err) {
@@ -46,12 +43,14 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
     fetchRecords();
   }, []);
 
-  // Add new record
+  // Add new record (POST)
   const addRecord = async () => {
     if (!newRecord.brandName) return;
     try {
       const res = await axios.post<OutreachRecord>(API_url, newRecord, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
       });
       setOutreach([...outreach, res.data]);
       setNewRecord({
@@ -67,35 +66,36 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
     }
   };
 
-  // Update record
+  // Update record (PUT)
   const updateRecord = async (id: string, updates: Partial<OutreachRecord>) => {
     try {
       const res = await axios.put<OutreachRecord>(`${API_url}/${id}`, updates, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
       });
       setOutreach(outreach.map(r => r.id === id ? res.data : r));
       setEditingRecord(null);
-      setShowAddForm(false);
     } catch (err) {
       console.error('Error updating record:', err);
     }
   };
 
-  // Delete record
-  const deleteRecord = async () => {
-    if (!deleteConfirm.id) return;
+  // Delete record (DELETE)
+  const deleteRecord = async (id: string) => {
     try {
-      await axios.delete(`${API_url}/${deleteConfirm.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      await axios.delete(`${API_url}/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
       });
-      setOutreach(outreach.filter(r => r.id !== deleteConfirm.id));
-      setDeleteConfirm({ open: false, id: null });
+      setOutreach(outreach.filter(r => r.id !== id));
     } catch (err) {
       console.error('Error deleting record:', err);
     }
   };
 
-  const filteredOutreach = filterStatus
+  const filteredOutreach = filterStatus 
     ? outreach.filter(record => record.status === filterStatus)
     : outreach;
 
@@ -141,7 +141,7 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
         </button>
       </div>
 
-      {/* Filter */}
+      {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
         <div className="flex items-center space-x-4">
           <Filter size={20} className="text-gray-500" />
@@ -158,27 +158,92 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
             <option value="Rejected">Rejected</option>
             <option value="Following Up">Following Up</option>
           </select>
+          {filterStatus && (
+            <span className="text-sm text-gray-600">
+              Showing {filteredOutreach.length} of {outreach.length} records
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {deleteConfirm.open && (
+      {/* Add/Edit Form Modal */}
+      {showAddForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm text-center">
-            <AlertTriangle className="text-red-500 mx-auto mb-3" size={36} />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Outreach?</h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete <span className="font-medium">{deleteConfirm.brandName}</span>? This action cannot be undone.
-            </p>
-            <div className="flex justify-center space-x-3">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{editingRecord ? 'Edit Outreach' : 'Add New Outreach'}</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Brand Name *</label>
+                <input
+                  type="text"
+                  value={newRecord.brandName || editingRecord?.brandName || ''}
+                  onChange={(e) => setNewRecord({...newRecord, brandName: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Platform</label>
+                  <select
+                    value={newRecord.platform || editingRecord?.platform || 'Instagram'}
+                    onChange={(e) => setNewRecord({...newRecord, platform: e.target.value as any})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="Instagram">Instagram</option>
+                    <option value="TikTok">TikTok</option>
+                    <option value="Email">Email</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                  <select
+                    value={newRecord.status || editingRecord?.status || 'Sent'}
+                    onChange={(e) => setNewRecord({...newRecord, status: e.target.value as any})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="Sent">Sent</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Read">Read</option>
+                    <option value="Replied">Replied</option>
+                    <option value="Rejected">Rejected</option>
+                    <option value="Following Up">Following Up</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">DM Sent Date</label>
+                <input
+                  type="date"
+                  value={newRecord.dmSentDate || editingRecord?.dmSentDate?.split('T')[0] || ''}
+                  onChange={(e) => setNewRecord({...newRecord, dmSentDate: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                <textarea
+                  value={newRecord.notes || editingRecord?.notes || ''}
+                  onChange={(e) => setNewRecord({...newRecord, notes: e.target.value})}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div className="flex space-x-3 mt-6">
               <button
-                onClick={deleteRecord}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                onClick={() => editingRecord ? updateRecord(editingRecord.id, newRecord) : addRecord()}
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 transition-all"
               >
-                Delete
+                {editingRecord ? 'Update Outreach' : 'Add Outreach'}
               </button>
               <button
-                onClick={() => setDeleteConfirm({ open: false, id: null })}
+                onClick={() => { setShowAddForm(false); setEditingRecord(null); }}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Cancel
@@ -227,8 +292,6 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
                     <p className="text-sm text-gray-600 mt-2">{record.notes}</p>
                   )}
                 </div>
-
-                {/* Action Buttons */}
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => { setEditingRecord(record); setShowAddForm(true); }}
@@ -238,7 +301,7 @@ const OutreachTracker: React.FC<OutreachTrackerProps> = ({ outreach, setOutreach
                     <Edit2 size={16} />
                   </button>
                   <button
-                    onClick={() => setDeleteConfirm({ open: true, id: record.id, brandName: record.brandName })}
+                    onClick={() => deleteRecord(record.id)}
                     className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     title="Delete"
                   >
