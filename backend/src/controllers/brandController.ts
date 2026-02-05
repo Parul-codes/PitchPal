@@ -10,28 +10,34 @@ export const getBrandResearch = async (req: Request, res: Response) => {
     const { query, niche } = req.body;
 
     const prompt = `
-Find 3 real brands related to the ${query || niche} niche. 
-For each brand, return:
-- name
-- niche (category)
-- website (if known)
-- Instagram handle (if known)
-- 3 popular products
-- a short 1-sentence brand description
+        You are a JSON generator.
 
-Return a valid JSON array like this:
-{
-  "brands": [
-    {
-      "id": "1",
-      "name": "Glossier",
-      "niche": "beauty",
-      "website": "glossier.com",
-      "suggestedProducts": ["Lip Balm", "Cloud Paint"]
-    }
-  ]
-}
-    `;
+        Return ONLY valid JSON.
+        No explanations.
+        No markdown.
+        No backticks.
+        No trailing commas.
+        Escape all quotes inside strings.
+
+        The response must be exactly in this format:
+
+        {
+          "brands": [
+            {
+              "id": "1",
+              "name": "",
+              "niche": "",
+              "website": "",
+              "instagram": "",
+              "popularProducts": [],
+              "description": ""
+            }
+          ]
+        }
+
+        Find 3 real brands related to the ${query || niche} niche.
+        `;
+
 
     const response: any = await client.models.generateContent({
       model: "gemini-2.5-flash",
@@ -44,20 +50,34 @@ Return a valid JSON array like this:
       "";
 
     // Try parsing JSON safely
-    let brands = [];
+    // let brands = [];
+    // try {
+    //   brands = JSON.parse(rawText);
+    // } catch {
+    //   // Fallback: extract JSON-like content
+    //   const jsonMatch = rawText.match(/\[([\s\S]*)\]/);
+    //   if (jsonMatch) brands = JSON.parse(jsonMatch[0]);
+    // }
+
+    let parsed;
     try {
-      brands = JSON.parse(rawText);
-    } catch {
-      // Fallback: extract JSON-like content
-      const jsonMatch = rawText.match(/\[([\s\S]*)\]/);
-      if (jsonMatch) brands = JSON.parse(jsonMatch[0]);
+      parsed = JSON.parse(rawText);
+    } catch (e) {
+      console.error("Invalid JSON from Gemini:", rawText);
+      throw new Error("Gemini returned invalid JSON");
     }
 
-    if (!brands.length) {
-      return res.status(200).json({ brands: [], message: "No structured data found." });
-    }
+    const brands = parsed?.brands ?? [];
 
-    res.status(200).json({ brands });
+    return res.status(200).json({ brands });
+
+
+    // if (!brands.length) {
+    //   return res.status(200).json({ brands: [], message: "No structured data found." });
+    // }
+
+    // res.status(200).json({ brands });
+    
   } catch (error) {
     console.error("Error in getBrandResearch:", error);
     res.status(500).json({ message: "Error fetching brand data", error });
